@@ -1,0 +1,19 @@
+{
+  "name": "simple-node-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "4.5.1",
+    "express": "5.2.1",
+    "morgan": "1.10.1",
+    "sqlite3": "5.1.7",
+    "systeminformation": "5.27.11"
+  }
+}
