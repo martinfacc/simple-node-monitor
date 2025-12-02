@@ -158,16 +158,19 @@
     </div>
 
     <script>
-      let selectedMinutes = 40
+      let selectedMinutes = null
 
-      function onPeriodChange(ev) {
-        const value = ev.target.value
+      function updateSelectedMinutes(value) {
         if (value === 'all') {
           selectedMinutes = null
         } else {
           const num = parseInt(value, 10)
           selectedMinutes = Number.isFinite(num) && num > 0 ? num : null
         }
+      }
+
+      function onPeriodChange(ev) {
+        updateSelectedMinutes(ev.target.value)
         refreshDashboard()
       }
 
@@ -301,8 +304,15 @@
         }
       }
 
-      refreshDashboard()
-      setInterval(refreshDashboard, 10000)
+      document.addEventListener('DOMContentLoaded', () => {
+        const periodSelect = document.getElementById('periodSelect')
+        if (periodSelect) {
+          updateSelectedMinutes(periodSelect.value)
+        }
+
+        refreshDashboard()
+        setInterval(refreshDashboard, 10000)
+      })
     </script>
   </body>
 </html>
