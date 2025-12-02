@@ -19,12 +19,19 @@ router.get('/', async (req, res) => {
       where.timestamp = { [Op.gte]: from }
     }
 
-    const rows = await Metric.findAll({
+    const findOptions = {
       where,
       order: [['id', 'DESC']],
-      limit: 500,
       raw: true
-    })
+    }
+
+    // Si se especifica un periodo en minutos, limitamos a 500 muestras.
+    // Si no, devolvemos todo el historial disponible.
+    if (hasValidMinutes) {
+      findOptions.limit = 500
+    }
+
+    const rows = await Metric.findAll(findOptions)
 
     res.json(rows.reverse())
   } catch (err) {
