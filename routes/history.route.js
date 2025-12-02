@@ -61,7 +61,21 @@ router.get('/', async (req, res) => {
       }
     })
 
-    res.json(withRates)
+    // Downsampling: si hay demasiados puntos, reducimos la cantidad
+    const MAX_POINTS = 500
+    let finalRows
+
+    if (withRates.length > MAX_POINTS) {
+      const step = Math.ceil(withRates.length / MAX_POINTS)
+      finalRows = withRates.filter((row, index) => {
+        // Siempre conservar el último punto además de los índices de paso
+        return index % step === 0 || index === withRates.length - 1
+      })
+    } else {
+      finalRows = withRates
+    }
+
+    res.json(finalRows)
   } catch (err) {
     console.error('Error obteniendo historial de métricas:', err)
     res.status(500).json({ error: 'No se pudo obtener el historial de métricas' })
