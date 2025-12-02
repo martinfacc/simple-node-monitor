@@ -1,4 +1,4 @@
-import si from 'systeminformation';
+import si from 'systeminformation'
 
 export async function getSystemMetrics() {
   const [cpu, mem, disks, stats, net] = await Promise.all([
@@ -7,11 +7,11 @@ export async function getSystemMetrics() {
     si.fsSize(),
     si.fsStats().catch(() => null), // <--- manejar error
     si.networkStats()
-  ]);
+  ])
 
-  const disk_used = disks?.[0]?.used || 0;
-  const disk_total = disks?.[0]?.size || 0;
-  const disk_use_percent = disks?.[0]?.use || 0;
+  const disk_used = disks?.[0]?.used || 0
+  const disk_total = disks?.[0]?.size || 0
+  const disk_use_percent = disks?.[0]?.use || 0
 
   return {
     timestamp: new Date().toISOString(),
@@ -24,7 +24,7 @@ export async function getSystemMetrics() {
     disk_read_bytes: stats?.rx || 0,
     disk_write_bytes: stats?.wx || 0,
     disk_io_wait: cpu.currentLoadIowait || 0,
-    net_rx: net.reduce((a,b)=>a+b.rx,0),
-    net_tx: net.reduce((a,b)=>a+b.tx,0)
-  };
+    net_rx: net.reduce((a, b) => a + b.rx, 0),
+    net_tx: net.reduce((a, b) => a + b.tx, 0)
+  }
 }

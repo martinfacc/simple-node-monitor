@@ -1,7 +1,7 @@
-import sqlite3 from 'sqlite3';
-sqlite3.verbose();
+import sqlite3 from 'sqlite3'
+sqlite3.verbose()
 
-const db = new sqlite3.Database('./db.sqlite');
+const db = new sqlite3.Database('./db.sqlite')
 
 db.serialize(() => {
   db.run(`
@@ -20,7 +20,7 @@ db.serialize(() => {
         net_rx REAL,
         net_tx REAL
     );
-  `);
-});
+  `)
+})
 
-export default db;
+export default db

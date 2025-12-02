@@ -1,18 +1,18 @@
-import si from 'systeminformation';
+import si from 'systeminformation'
 
 export async function getDiskMetrics() {
   // Información de particiones
-  const partitions = await si.fsSize(); 
+  const partitions = await si.fsSize()
 
   // Estadísticas globales de disco
-  const stats = await si.fsStats();
+  const stats = await si.fsStats()
 
   // Otras métricas opcionales
-  const blockDevices = await si.blockDevices(); // detalles físicos
-  const ioWait = (await si.currentLoad()).currentLoadIowait; // % CPU esperando disco
+  const blockDevices = await si.blockDevices() // detalles físicos
+  const ioWait = (await si.currentLoad()).currentLoadIowait // % CPU esperando disco
 
   return {
-    partitions: partitions.map(d => ({
+    partitions: partitions.map((d) => ({
       fs: d.fs,
       type: d.type,
       mount: d.mount,
@@ -31,7 +31,7 @@ export async function getDiskMetrics() {
       t_io_total: stats.t_io,
       t_io_per_sec: stats.t_io_sec
     },
-    blockDevices: blockDevices.map(b => ({
+    blockDevices: blockDevices.map((b) => ({
       name: b.name,
       type: b.type,
       size_bytes: b.size,
@@ -40,7 +40,7 @@ export async function getDiskMetrics() {
       mount: b.mount
     })),
     io_wait_percent: ioWait.toFixed(2)
-  };
+  }
 }
 
 // Ejemplo de uso

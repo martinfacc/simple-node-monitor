@@ -1,21 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Monitorización</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Monitorización</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    body {
+      body {
         margin: 0;
         font-family: 'Inter', sans-serif;
         background: #f0f2f5;
         color: #333;
-    }
+      }
 
-    header {
+      header {
         background: #1f2937;
         color: #f9fafb;
         padding: 20px;
@@ -23,181 +23,191 @@
         font-weight: 700;
         text-align: center;
         letter-spacing: 1px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-    }
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+      }
 
-    .container {
+      .container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
         gap: 30px;
         padding: 30px;
-    }
+      }
 
-    .card {
+      .card {
         background: #ffffff;
         border-radius: 12px;
         padding: 25px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         transition: transform 0.2s ease;
-    }
+      }
 
-    .card:hover {
+      .card:hover {
         transform: translateY(-4px);
-    }
+      }
 
-    .title {
+      .title {
         font-size: 18px;
         font-weight: 600;
         margin-bottom: 15px;
         color: #111827;
-    }
+      }
 
-    canvas {
+      canvas {
         max-height: 260px;
-    }
+      }
 
-    .metrics {
+      .metrics {
         display: flex;
         justify-content: space-around;
         margin-top: 15px;
         gap: 15px;
         flex-wrap: wrap;
-    }
+      }
 
-    .metric {
+      .metric {
         flex: 1;
         min-width: 80px;
         background: #f9fafb;
         border-radius: 8px;
         padding: 12px;
         text-align: center;
-        box-shadow: inset 0 -1px 3px rgba(0,0,0,0.05);
+        box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.05);
         transition: background 0.2s;
-    }
+      }
 
-    .metric span {
+      .metric span {
         display: block;
         font-size: 22px;
         font-weight: 700;
         margin-top: 5px;
         color: #111827;
-    }
+      }
 
-    .metric:hover {
+      .metric:hover {
         background: #e5e7eb;
-    }
+      }
+    </style>
+  </head>
+  <body>
+    <header>Monitorización</header>
 
-</style>
-</head>
-<body>
-
-<header>Monitorización</header>
-
-<div class="container">
-
-    <!-- Tarjetas métricas -->
-    <div class="card">
+    <div class="container">
+      <!-- Tarjetas métricas -->
+      <div class="card">
         <div class="title">Métricas en tiempo real</div>
         <div class="metrics">
-            <div class="metric">CPU<br><span id="cpuVal">0</span>%</div>
-            <div class="metric">RAM<br><span id="ramVal">0</span>%</div>
-            <div class="metric">Disco<br><span id="diskVal">0</span>%</div>
-            <div class="metric">I/O Wait<br><span id="ioWaitVal">0</span>%</div>
+          <div class="metric">CPU<br /><span id="cpuVal">0</span>%</div>
+          <div class="metric">RAM<br /><span id="ramVal">0</span>%</div>
+          <div class="metric">Disco<br /><span id="diskVal">0</span>%</div>
+          <div class="metric">I/O Wait<br /><span id="ioWaitVal">0</span>%</div>
         </div>
-    </div>
+      </div>
 
-    <!-- Gráficos -->
-    <div class="card">
+      <!-- Gráficos -->
+      <div class="card">
         <div class="title">CPU (%)</div>
         <canvas id="cpuChart"></canvas>
-    </div>
+      </div>
 
-    <div class="card">
+      <div class="card">
         <div class="title">Memoria (%)</div>
         <canvas id="memChart"></canvas>
-    </div>
+      </div>
 
-    <div class="card">
+      <div class="card">
         <div class="title">Disco (%)</div>
         <canvas id="diskChart"></canvas>
-    </div>
+      </div>
 
-    <div class="card">
+      <div class="card">
         <div class="title">Disco I/O (KB/s)</div>
         <canvas id="diskIOChart"></canvas>
-    </div>
+      </div>
 
-    <div class="card">
+      <div class="card">
         <div class="title">Red (KB/s)</div>
         <canvas id="netChart"></canvas>
+      </div>
     </div>
 
-</div>
+    <script>
+      async function loadHistory() {
+        const res = await fetch('/api/history')
+        return await res.json()
+      }
 
-<script>
-async function loadHistory() {
-    const res = await fetch("/api/history");
-    return await res.json();
-}
+      function formatTimestamp(ts) {
+        const date = new Date(ts)
+        return date.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      }
 
-function formatTimestamp(ts) {
-    const date = new Date(ts);
-    return date.toLocaleTimeString("es-ES", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-    });
-}
-
-function createChart(ctx, label, labels, values, color) {
-    return new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label, data: values, borderColor: color, borderWidth: 2, pointRadius: 0, tension: 0.3 }] },
-        options: {
+      function createChart(ctx, label, labels, values, color) {
+        return new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label,
+                data: values,
+                borderColor: color,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
             scales: { x: { ticks: { maxRotation: 0, minRotation: 0 } }, y: { beginAtZero: true } },
             plugins: { legend: { display: false } }
-        }
-    });
-}
+          }
+        })
+      }
 
-let charts = {};
+      let charts = {}
 
-async function refreshDashboard() {
-    const h = await loadHistory();
-    if (!h.length) return;
+      async function refreshDashboard() {
+        const h = await loadHistory()
+        if (!h.length) return
 
-    const labels = h.map(i => formatTimestamp(i.timestamp));
-    const cpu = h.map(i => i.cpu);
-    const mem = h.map(i => (i.mem_used / i.mem_total) * 100);
-    const disk = h.map(i => i.disk_use_percent);
-    const diskIO = h.map(i => (i.disk_read_bytes + i.disk_write_bytes)/1024);
-    const net = h.map(i => (i.net_rx + i.net_tx)/1024);
+        const labels = h.map((i) => formatTimestamp(i.timestamp))
+        const cpu = h.map((i) => i.cpu)
+        const mem = h.map((i) => (i.mem_used / i.mem_total) * 100)
+        const disk = h.map((i) => i.disk_use_percent)
+        const diskIO = h.map((i) => (i.disk_read_bytes + i.disk_write_bytes) / 1024)
+        const net = h.map((i) => (i.net_rx + i.net_tx) / 1024)
 
-    const latest = h[h.length - 1];
+        const latest = h[h.length - 1]
 
-    document.getElementById('cpuVal').innerText = latest.cpu.toFixed(1);
-    document.getElementById('ramVal').innerText = ((latest.mem_used/latest.mem_total)*100).toFixed(1);
-    document.getElementById('diskVal').innerText = latest.disk_use_percent.toFixed(1);
-    document.getElementById('ioWaitVal').innerText = latest.disk_io_wait.toFixed(1);
+        document.getElementById('cpuVal').innerText = latest.cpu.toFixed(1)
+        document.getElementById('ramVal').innerText = (
+          (latest.mem_used / latest.mem_total) *
+          100
+        ).toFixed(1)
+        document.getElementById('diskVal').innerText = latest.disk_use_percent.toFixed(1)
+        document.getElementById('ioWaitVal').innerText = latest.disk_io_wait.toFixed(1)
 
-    if (charts.cpu) charts.cpu.destroy();
-    if (charts.mem) charts.mem.destroy();
-    if (charts.disk) charts.disk.destroy();
-    if (charts.diskIO) charts.diskIO.destroy();
-    if (charts.net) charts.net.destroy();
+        if (charts.cpu) charts.cpu.destroy()
+        if (charts.mem) charts.mem.destroy()
+        if (charts.disk) charts.disk.destroy()
+        if (charts.diskIO) charts.diskIO.destroy()
+        if (charts.net) charts.net.destroy()
 
-    charts.cpu = createChart(cpuChart, "CPU (%)", labels, cpu, "#3b82f6");
-    charts.mem = createChart(memChart, "Memoria (%)", labels, mem, "#10b981");
-    charts.disk = createChart(diskChart, "Disco (%)", labels, disk, "#8b5cf6");
-    charts.diskIO = createChart(diskIOChart, "Disco I/O (KB/s)", labels, diskIO, "#f97316");
-    charts.net = createChart(netChart, "Red (KB/s)", labels, net, "#ef4444");
-}
+        charts.cpu = createChart(cpuChart, 'CPU (%)', labels, cpu, '#3b82f6')
+        charts.mem = createChart(memChart, 'Memoria (%)', labels, mem, '#10b981')
+        charts.disk = createChart(diskChart, 'Disco (%)', labels, disk, '#8b5cf6')
+        charts.diskIO = createChart(diskIOChart, 'Disco I/O (KB/s)', labels, diskIO, '#f97316')
+        charts.net = createChart(netChart, 'Red (KB/s)', labels, net, '#ef4444')
+      }
 
-refreshDashboard();
-setInterval(refreshDashboard, 10000);
-</script>
-
-</body>
+      refreshDashboard()
+      setInterval(refreshDashboard, 10000)
+    </script>
+  </body>
 </html>
