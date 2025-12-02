@@ -237,7 +237,17 @@
         const cpu = h.map((i) => i.cpu)
         const mem = h.map((i) => (i.mem_used / i.mem_total) * 100)
         const disk = h.map((i) => i.disk_use_percent)
-        const diskIO = h.map((i) => (i.disk_read_bytes + i.disk_write_bytes) / 1024)
+        const diskIO = h.map((i) => {
+          const hasRates =
+            Number.isFinite(i.disk_read_kb_s) || Number.isFinite(i.disk_write_kb_s)
+
+          if (hasRates) {
+            return (i.disk_read_kb_s || 0) + (i.disk_write_kb_s || 0)
+          }
+
+          // Fallback: si el backend aún no envía *_kb_s, usar los contadores acumulados
+          return ((i.disk_read_bytes || 0) + (i.disk_write_bytes || 0)) / 1024
+        })
         const net = h.map((i) => (i.net_rx + i.net_tx) / 1024)
 
         const latest = h[h.length - 1]

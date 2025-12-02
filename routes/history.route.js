@@ -33,7 +33,41 @@ router.get('/', async (req, res) => {
 
     const rows = await Metric.findAll(findOptions)
 
-    res.json(rows.reverse())
+    const ascRows = rows.reverse()
+
+    const withRates = ascRows.map((row, index) => {
+      if (index === 0) {
+        return {
+          ...row,
+          disk_read_kb_s: 0,
+          disk_write_kb_s: 0
+        }
+      }
+
+      const prev = ascRows[index - 1]
+      const nowTs = new Date(row.timestamp).getTime()
+      const prevTs = new Date(prev.timestamp).getTime()
+      const deltaSeconds = (nowTs - prevTs) / 1000
+
+      const safeDeltaSeconds = !Number.isFinite(deltaSeconds) || deltaSeconds <= 0 ? 1 : deltaSeconds
+
+      const deltaReadBytes = (row.disk_read_bytes || 0) - (prev.disk_read_bytes || 0)
+      const deltaWriteBytes = (row.disk_write_bytes || 0) - (prev.disk_write_bytes || 0)
+
+      const readBytesPerSec = deltaReadBytes / safeDeltaSeconds
+      const writeBytesPerSec = deltaWriteBytes / safeDeltaSeconds
+
+      const disk_read_kb_s = Math.max(0, readBytesPerSec / 1024)
+      const disk_write_kb_s = Math.max(0, writeBytesPerSec / 1024)
+
+      return {
+        ...row,
+        disk_read_kb_s,
+        disk_write_kb_s
+      }
+    })
+
+    res.json(withRates)
   } catch (err) {
     console.error('Error obteniendo historial de métricas:', err)
     res.status(500).json({ error: 'No se pudo obtener el historial de métricas' })
