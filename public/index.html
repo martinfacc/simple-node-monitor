@@ -91,6 +91,33 @@
   <body>
     <header>Monitorización</header>
 
+    <div
+      style="
+        padding: 18px 30px 2px 30px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+      "
+    >
+      <label for="periodSelect" style="font-size: 14px; color: #4b5563">Periodo:</label>
+      <select
+        id="periodSelect"
+        onchange="onPeriodChange(event)"
+        style="padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px"
+      >
+        <option value="10">Últimos 10 min</option>
+        <option value="30">Últimos 30 min</option>
+        <option value="60" selected>Última hora</option>
+        <option value="180">Últimas 3 horas</option>
+        <option value="360">Últimas 6 horas</option>
+        <option value="720">Últimas 12 horas</option>
+        <option value="1440">Último día</option>
+        <option value="10080">Última semana</option>
+        <option value="all">Todo</option>
+      </select>
+    </div>
+
     <div class="container">
       <!-- Tarjetas métricas -->
       <div class="card">
@@ -131,9 +158,34 @@
     </div>
 
     <script>
+      let selectedMinutes = 40
+
+      function onPeriodChange(ev) {
+        const value = ev.target.value
+        if (value === 'all') {
+          selectedMinutes = null
+        } else {
+          const num = parseInt(value, 10)
+          selectedMinutes = Number.isFinite(num) && num > 0 ? num : null
+        }
+        refreshDashboard()
+      }
+
       async function loadHistory() {
-        const res = await fetch('/api/history')
-        return await res.json()
+        try {
+          const url = selectedMinutes
+            ? `/api/history?minutes=${encodeURIComponent(selectedMinutes)}`
+            : '/api/history'
+          const res = await fetch(url)
+          if (!res.ok) {
+            console.error('Error HTTP al cargar historial:', res.status)
+            return []
+          }
+          return await res.json()
+        } catch (err) {
+          console.error('Error de red al cargar historial:', err)
+          return []
+        }
       }
 
       function formatTimestamp(ts) {
@@ -145,7 +197,12 @@
         })
       }
 
-      function createChart(ctx, label, labels, values, color) {
+      function createChart(ctx, label, labels, values, color, fixedMin = null, fixedMax = null) {
+        const yOptions = { beginAtZero: true }
+
+        if (fixedMin !== null) yOptions.min = fixedMin
+        if (fixedMax !== null) yOptions.max = fixedMax
+
         return new Chart(ctx, {
           type: 'line',
           data: {
@@ -164,7 +221,7 @@
           options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
-            scales: { x: { ticks: { maxRotation: 0, minRotation: 0 } }, y: { beginAtZero: true } },
+            scales: { x: { ticks: { maxRotation: 0, minRotation: 0 } }, y: yOptions },
             plugins: { legend: { display: false } }
           }
         })
@@ -193,17 +250,45 @@
         document.getElementById('diskVal').innerText = latest.disk_use_percent.toFixed(1)
         document.getElementById('ioWaitVal').innerText = latest.disk_io_wait.toFixed(1)
 
-        if (charts.cpu) charts.cpu.destroy()
-        if (charts.mem) charts.mem.destroy()
-        if (charts.disk) charts.disk.destroy()
-        if (charts.diskIO) charts.diskIO.destroy()
-        if (charts.net) charts.net.destroy()
+        if (!charts.cpu) {
+          charts.cpu = createChart(cpuChart, 'CPU (%)', labels, cpu, '#3b82f6', 0, 100)
+        } else {
+          charts.cpu.data.labels = labels
+          charts.cpu.data.datasets[0].data = cpu
+          charts.cpu.update()
+        }
 
-        charts.cpu = createChart(cpuChart, 'CPU (%)', labels, cpu, '#3b82f6')
-        charts.mem = createChart(memChart, 'Memoria (%)', labels, mem, '#10b981')
-        charts.disk = createChart(diskChart, 'Disco (%)', labels, disk, '#8b5cf6')
-        charts.diskIO = createChart(diskIOChart, 'Disco I/O (KB/s)', labels, diskIO, '#f97316')
-        charts.net = createChart(netChart, 'Red (KB/s)', labels, net, '#ef4444')
+        if (!charts.mem) {
+          charts.mem = createChart(memChart, 'Memoria (%)', labels, mem, '#10b981', 0, 100)
+        } else {
+          charts.mem.data.labels = labels
+          charts.mem.data.datasets[0].data = mem
+          charts.mem.update()
+        }
+
+        if (!charts.disk) {
+          charts.disk = createChart(diskChart, 'Disco (%)', labels, disk, '#8b5cf6', 0, 100)
+        } else {
+          charts.disk.data.labels = labels
+          charts.disk.data.datasets[0].data = disk
+          charts.disk.update()
+        }
+
+        if (!charts.diskIO) {
+          charts.diskIO = createChart(diskIOChart, 'Disco I/O (KB/s)', labels, diskIO, '#f97316')
+        } else {
+          charts.diskIO.data.labels = labels
+          charts.diskIO.data.datasets[0].data = diskIO
+          charts.diskIO.update()
+        }
+
+        if (!charts.net) {
+          charts.net = createChart(netChart, 'Red (KB/s)', labels, net, '#ef4444')
+        } else {
+          charts.net.data.labels = labels
+          charts.net.data.datasets[0].data = net
+          charts.net.update()
+        }
       }
 
       refreshDashboard()
