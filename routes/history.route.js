@@ -25,12 +25,6 @@ router.get('/', async (req, res) => {
       raw: true
     }
 
-    // Si se especifica un periodo en minutos, limitamos a 500 muestras.
-    // Si no, devolvemos todo el historial disponible.
-    if (hasValidMinutes) {
-      findOptions.limit = 500
-    }
-
     const rows = await Metric.findAll(findOptions)
 
     const ascRows = rows.reverse()
