@@ -22,7 +22,9 @@ export async function getSystemMetrics() {
   return {
     timestamp: new Date().toISOString(),
     cpu: cpu.currentLoad || 0,
-    mem_used: mem.used || 0,
+    mem_used: (mem.total && mem.available)
+      ? mem.total - mem.available
+      : mem.used || 0,
     mem_total: mem.total || 0,
     disk_used,
     disk_total,
